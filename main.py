@@ -152,5 +152,5 @@ if __name__ == "__main__":
                 print("Du har lånt denne boken: " + ny_bokreserering.bok_navn)
 
             elif option == "3":
-                print("Du har nå logget ut")
+                print("Du har nå logget ut.")
                 current_user = None
