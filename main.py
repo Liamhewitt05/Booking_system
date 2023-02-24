@@ -1,4 +1,5 @@
 import json
+import hashlib
 from dataclasses import dataclass
 
 
@@ -12,9 +13,22 @@ class EnkelBruker:
 
 
 @dataclass
+class Bok:
+    navn: str
+    antall: int
+
+
+@dataclass
 class BokReservering:
     bok_navn: str
     antall_dager_bok: int
+
+
+def test_sha(value_to_test):
+    hash_instance = hashlib.sha256(value_to_test.encode())
+    string_hash = hash_instance.hexdigest()
+    return string_hash
+    # print(value_to_test)
 
 
 def registrer_enkel():
@@ -67,32 +81,41 @@ def reserver_bok():
     return ny_bokreserering
 
 
-def lagre_lånt_bok(alle_bøker):
+def lagre_reservasjoner(reservasjoner):
     data = {}
-    for bok in alle_bøker:
-        data[bok.bok_navn] = dict()
-        data[bok.bok_navn]["antall_dager_bok"] = bok.antall_dager_bok
+    for reservasjon in reservasjoner:
+        data[reservasjon.bok_navn] = dict()
+        data[reservasjon.bok_navn]["antall_dager_bok"] = reservasjon.antall_dager_bok
 
-    with open("bøker.json", "w+") as f:
+    with open("reservasjoner.json", "w+") as f:
         f.write(json.dumps(data))
 
 
-def last_inn_bøker():
-    data = open("bøker.json", "r").read()
+def last_inn_reservasjoner():
+    data = open("reservasjoner.json", "r").read()
     data = json.loads(data)
     liste = []
-    for bok in data:
+    for reservasjon in data:
         liste.append(
             BokReservering(
-                bok_navn=bok, antall_dager_bok=data[bok]["antall_dager_bok"]
+                bok_navn=reservasjon, antall_dager_bok=data[reservasjon]["antall_dager_bok"]
             )
         )
     return liste
 
 
+def last_inn_ledige_bøker():
+    data = open("Ledige_bøker.json", "r").read()
+    data = json.loads(data)
+    liste = []
+    for bok_navn, value in data["alle_boker"].items():
+        liste.append(Bok(navn=bok_navn, antall=value["antall"]))
+    return liste
+
+
 if __name__ == "__main__":
     alle_brukere = last_inn_brukere()
-    alle_bøker = last_inn_bøker()
+    alle_reservasjoner = last_inn_reservasjoner()
     current_user = None
 
     # temporary cheat to avoid login
@@ -109,6 +132,8 @@ if __name__ == "__main__":
             option = input("1: Ny bruker \n2: Logg inn\n:")
             if option == "1":
                 new_user = registrer_enkel()
+                encrypted = test_sha(new_user.passord)
+                new_user.passord = encrypted
 
                 # check if the book exists
                 # book_exists = False
@@ -126,6 +151,7 @@ if __name__ == "__main__":
                 # Krypter dataene
                 # Enveiskryptering
                 # Toveiskryptering (avansert)
+
                 alle_brukere.append(new_user)
                 lagre_brukere(alle_brukere)
                 current_user = new_user
@@ -138,7 +164,7 @@ if __name__ == "__main__":
                         # Krypter passord
                         # Sammenlign med allerede
                         # kryptert passord.
-                        if password == bruker.passord:
+                        if test_sha(password) == bruker.passord:
                             current_user = bruker
                         else:
                             print("Innlogging feilet.")
@@ -146,10 +172,20 @@ if __name__ == "__main__":
             print("Logged in as " + current_user.navn)
             option = input("1: Lån ny bok \n2: Lever inn bok \n3: Logg ut\n:")
             if option == "1":
-                ny_bokreserering = reserver_bok()
-                alle_bøker.append(ny_bokreserering)
-                lagre_lånt_bok(alle_bøker)
-                print("Du har lånt denne boken: " + ny_bokreserering.bok_navn)
+                ny_bokreservering = reserver_bok()
+                ledige_bøker = last_inn_ledige_bøker()
+
+                found_book = None
+                for bok in ledige_bøker:
+                    if bok.navn == ny_bokreservering.bok_navn:
+                        found_book = bok
+
+                if found_book is not None:
+                    alle_reservasjoner.append(ny_bokreservering)
+                    lagre_reservasjoner(alle_reservasjoner)
+                    print("Du har lånt denne boken: " + ny_bokreservering.bok_navn)
+                else:
+                    print("Boo!")
 
             elif option == "3":
                 print("Du har nå logget ut.")
