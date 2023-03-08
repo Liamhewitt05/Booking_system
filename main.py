@@ -87,7 +87,16 @@ def lagre_reservasjoner(reservasjoner):
         data[reservasjon.bok_navn] = dict()
         data[reservasjon.bok_navn]["antall_dager_bok"] = reservasjon.antall_dager_bok
 
-    with open("reservasjoner.json", "a") as f:
+    with open("reservasjoner.json", "w+") as f:
+        f.write(json.dumps(data))
+
+
+def lagre_ledige_bøker(ledige_bøker):
+    data = {"alle_boker": {}}
+    for bok in ledige_bøker:
+        data["alle_boker"][bok.navn] = {"antall": bok.antall}
+
+    with open("Ledige_bøker.json", "w+") as f:
         f.write(json.dumps(data))
 
 
@@ -181,18 +190,29 @@ if __name__ == "__main__":
                 found_book = None
 
                 for bok in ledige_bøker:
-                    if bok.antall < "1":
-                        print("Ingen flere ledige kopier")
+                    if bok.antall < 1:
+                        ingen_ledige = found_book
                     else:
                         if bok.navn == ny_bokreservering.bok_navn:
-                            # bok.antall -= 1
+                            bok.antall -= 1
                             found_book = bok
                             alle_reservasjoner.append(ny_bokreservering)
                             lagre_reservasjoner(alle_reservasjoner)
+                            lagre_ledige_bøker(ledige_bøker)
+                            print(ledige_bøker)
                 if found_book is not None:
                     print("Du har lånt denne boken: " + ny_bokreservering.bok_navn)
+                elif found_book is ingen_ledige:
+                    print("Ingen flere ledige kopier")
                 else:
                     print("Ingen bok med dette navnet")
+            elif option == "2":
+                ledige_bøker = last_inn_ledige_bøker()
+                innlevering = input("Hva heter boken du vil lever inn?\n")
+                for bok in ledige_bøker:
+                    if bok.navn == innlevering:
+                        bok.antall += 1
+                        lagre_ledige_bøker(ledige_bøker)
             elif option == "3":
                 print("Du har nå logget ut.")
                 current_user = None
