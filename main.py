@@ -1,3 +1,4 @@
+"""Booking systej"""
 import json
 import hashlib
 from dataclasses import dataclass
@@ -5,59 +6,56 @@ from dataclasses import dataclass
 
 @dataclass
 class EnkelBruker:
+    """klasse som holder brukere"""
+
     navn: str
     passord: str
-    # boknavn: str
-    # antall_dager: int
-    # nyhetsbrev: bool = False
 
 
 @dataclass
 class Bok:
+    """klasse som holder bok navn og antall"""
+
     navn: str
     antall: int
 
 
 @dataclass
 class BokReservering:
+    """klasse som holder reserveringer"""
+
     bok_navn: str
     antall_dager_bok: int
 
 
-def test_sha(value_to_test):
-    hash_instance = hashlib.sha256(value_to_test.encode())
+def create_sha(value):
+    """kryptering"""
+    hash_instance = hashlib.sha256(value.encode())
     string_hash = hash_instance.hexdigest()
     return string_hash
-    # print(value_to_test)
 
 
-def registrer_enkel():
+def registrer_bruker():
+    """registrerer bruker"""
     ny_bruker = EnkelBruker(
         navn=input("Brukernavn: "),
         passord=input("passord: "),
-        # boknavn=input("Hva heter boken du vil låne?: "),
-        # antall_dager=input("Hvor mange dager vil du låne boken?: "),
-        # nyhetsbrev=False,
     )
-    # nyhetsbrev = input("Vil du motta nyhetsbrev? j/n: ")
-    # if nyhetsbrev == "j":
-    #     ny_bruker.nyhetsbrev = True
     return ny_bruker
 
 
 def lagre_brukere(liste_over_brukere):
+    """lagrer alle brukerene"""
     data = {}
     for bruker in liste_over_brukere:
         data[bruker.navn] = {}
         data[bruker.navn]["passord"] = bruker.passord
-        # data[bruker.navn]["boknavn"] = bruker.boknavn
-        # data[bruker.navn]["antall_dager"] = bruker.antall_dager
-        # data[bruker.navn]["nyhetsbrev"] = bruker.nyhetsbrev
     with open("brukere.json", "w+") as f:
         f.write(json.dumps(data))
 
 
 def last_inn_brukere():
+    """leser alle brukerene"""
     data = open("brukere.json", "r").read()
     data = json.loads(data)
     liste = []
@@ -66,15 +64,13 @@ def last_inn_brukere():
             EnkelBruker(
                 navn=bruker,
                 passord=data[bruker]["passord"],
-                # boknavn=data[bruker]["boknavn"],
-                # antall_dager=data[bruker]["antall_dager"],
-                # nyhetsbrev=data[bruker]["nyhetsbrev"],
             )
         )
     return liste
 
 
 def reserver_bok():
+    """setter reservasjon"""
     ny_bokreserering = BokReservering(
         bok_navn=input("bok_navn: "), antall_dager_bok=int(input("antall_dager_bok: "))
     )
@@ -82,6 +78,7 @@ def reserver_bok():
 
 
 def lagre_reservasjoner(reservasjoner):
+    """lagrer reservasjonen"""
     data = {}
     for reservasjon in reservasjoner:
         data[reservasjon.bok_navn] = dict()
@@ -91,16 +88,8 @@ def lagre_reservasjoner(reservasjoner):
         f.write(json.dumps(data))
 
 
-def lagre_ledige_bøker(ledige_bøker):
-    data = {"alle_boker": {}}
-    for bok in ledige_bøker:
-        data["alle_boker"][bok.navn] = {"antall": bok.antall}
-
-    with open("Ledige_bøker.json", "w+") as f:
-        f.write(json.dumps(data))
-
-
 def last_inn_reservasjoner():
+    """leser alle reservasjonene"""
     data = open("reservasjoner.json", "r").read()
     data = json.loads(data)
     liste = []
@@ -113,7 +102,18 @@ def last_inn_reservasjoner():
     return liste
 
 
+def lagre_ledige_bøker(ledige_bøker):
+    """lagrer ledige bøker"""
+    data = {"alle_boker": {}}
+    for bok in ledige_bøker:
+        data["alle_boker"][bok.navn] = {"antall": bok.antall}
+
+    with open("Ledige_bøker.json", "w+") as f:
+        f.write(json.dumps(data))
+
+
 def last_inn_ledige_bøker():
+    """leser ledige bøker"""
     data = open("Ledige_bøker.json", "r").read()
     data = json.loads(data)
     liste = []
@@ -132,35 +132,13 @@ if __name__ == "__main__":
         if user.navn == "liam":
             current_user = user
 
-    # for bruker in alle_brukere:
-    #     if bruker.navn == "Svein":
-    #         bruker.passord = "123"
-    # lagre_brukere(alle_brukere)
     while True:
         if current_user is None:
             option = input("1: Ny bruker \n2: Logg inn\n:")
             if option == "1":
-                new_user = registrer_enkel()
-                encrypted = test_sha(new_user.passord)
+                new_user = registrer_bruker()
+                encrypted = create_sha(new_user.passord)
                 new_user.passord = encrypted
-
-                # check if the book exists
-                # book_exists = False
-                # for bruker in alle_brukere:
-                #     if new_user.boknavn == bruker.boknavn:
-                #         book_exists = True
-                #         break
-
-                # # if book exixsts print message, otherwise add the booking
-                # if book_exists:
-                #     print("Denne boken er allerede lånt ut, prøv igjen.")
-                # else:
-                #     alle_brukere.append(new_user)
-
-                # Krypter dataene
-                # Enveiskryptering
-                # Toveiskryptering (avansert)
-
                 alle_brukere.append(new_user)
                 lagre_brukere(alle_brukere)
                 current_user = new_user
@@ -170,10 +148,7 @@ if __name__ == "__main__":
                 for bruker in alle_brukere:
                     if navn == bruker.navn:
                         password = input("Passord: ")
-                        # Krypter passord
-                        # Sammenlign med allerede
-                        # kryptert passord.
-                        if test_sha(password) == bruker.passord:
+                        if create_sha(password) == bruker.passord:
                             current_user = bruker
                         else:
                             print("Innlogging feilet.")
