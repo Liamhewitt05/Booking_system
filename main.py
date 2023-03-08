@@ -87,7 +87,7 @@ def lagre_reservasjoner(reservasjoner):
         data[reservasjon.bok_navn] = dict()
         data[reservasjon.bok_navn]["antall_dager_bok"] = reservasjon.antall_dager_bok
 
-    with open("reservasjoner.json", "w+") as f:
+    with open("reservasjoner.json", "a") as f:
         f.write(json.dumps(data))
 
 
@@ -172,21 +172,27 @@ if __name__ == "__main__":
             print("Logged in as " + current_user.navn)
             option = input("1: Lån ny bok \n2: Lever inn bok \n3: Logg ut\n:")
             if option == "1":
-                ny_bokreservering = reserver_bok()
                 ledige_bøker = last_inn_ledige_bøker()
-
-                found_book = None
+                print("Ledige bøker:")
                 for bok in ledige_bøker:
-                    if bok.navn == ny_bokreservering.bok_navn:
-                        found_book = bok
+                    print(bok.navn)
 
+                ny_bokreservering = reserver_bok()
+                found_book = None
+
+                for bok in ledige_bøker:
+                    if bok.antall < "1":
+                        print("Ingen flere ledige kopier")
+                    else:
+                        if bok.navn == ny_bokreservering.bok_navn:
+                            # bok.antall -= 1
+                            found_book = bok
+                            alle_reservasjoner.append(ny_bokreservering)
+                            lagre_reservasjoner(alle_reservasjoner)
                 if found_book is not None:
-                    alle_reservasjoner.append(ny_bokreservering)
-                    lagre_reservasjoner(alle_reservasjoner)
                     print("Du har lånt denne boken: " + ny_bokreservering.bok_navn)
                 else:
-                    print("Boo!")
-
+                    print("Ingen bok med dette navnet")
             elif option == "3":
                 print("Du har nå logget ut.")
                 current_user = None
