@@ -24,6 +24,7 @@ class Bok:
 class BokReservering:
     """klasse som holder reserveringer"""
 
+    user: str
     bok_navn: str
     antall_dager_bok: int
 
@@ -69,10 +70,10 @@ def last_inn_brukere():
     return liste
 
 
-def reserver_bok():
+def reserver_bok(user):
     """setter reservasjon"""
     ny_bokreserering = BokReservering(
-        bok_navn=input("bok_navn: "), antall_dager_bok=int(input("antall_dager_bok: "))
+        user=user, bok_navn=input("bok_navn: "), antall_dager_bok=int(input("antall_dager_bok: "))
     )
     return ny_bokreserering
 
@@ -81,8 +82,9 @@ def lagre_reservasjoner(reservasjoner):
     """lagrer reservasjonen"""
     data = {}
     for reservasjon in reservasjoner:
-        data[reservasjon.bok_navn] = dict()
-        data[reservasjon.bok_navn]["antall_dager_bok"] = reservasjon.antall_dager_bok
+        data[reservasjon.user] = dict()
+        data[reservasjon.user]["bok_navn"] = reservasjon.bok_navn
+        data[reservasjon.user]["antall_dager_bok"] = reservasjon.antall_dager_bok
 
     with open("reservasjoner.json", "w+") as f:
         f.write(json.dumps(data))
@@ -96,7 +98,9 @@ def last_inn_reservasjoner():
     for reservasjon in data:
         liste.append(
             BokReservering(
-                bok_navn=reservasjon, antall_dager_bok=data[reservasjon]["antall_dager_bok"]
+                user=reservasjon,
+                bok_navn=data[reservasjon]["bok_navn"],
+                antall_dager_bok=data[reservasjon]["antall_dager_bok"],
             )
         )
     return liste
@@ -122,6 +126,16 @@ def last_inn_ledige_bøker():
     return liste
 
 
+def bok_innlevering():
+    """fjerner boken fra reservasjoner"""
+    lagre_ledige_bøker(ledige_bøker)
+    data = open("reservasjoner.json", "r").read()
+    data = json.loads(data)
+    data.pop(current_user.navn)
+    with open("reservasjoner.json", "w+") as f:
+        f.write(json.dumps(data))
+
+
 if __name__ == "__main__":
     alle_brukere = last_inn_brukere()
     alle_reservasjoner = last_inn_reservasjoner()
@@ -144,16 +158,16 @@ if __name__ == "__main__":
                 current_user = new_user
 
             elif option == "2":
-                navn = input("Brukernavn: ")
+                navn = input("Brukernavn: \n")
                 for bruker in alle_brukere:
                     if navn == bruker.navn:
-                        password = input("Passord: ")
+                        password = input("Passord: \n")
                         if create_sha(password) == bruker.passord:
                             current_user = bruker
                         else:
-                            print("Innlogging feilet.")
+                            print("Innlogging feilet.\n")
         else:
-            print("Logged in as " + current_user.navn)
+            print("\nLogged in as " + current_user.navn + "\n")
             option = input("1: Lån ny bok \n2: Lever inn bok \n3: Logg ut\n:")
             if option == "1":
                 ledige_bøker = last_inn_ledige_bøker()
@@ -161,7 +175,7 @@ if __name__ == "__main__":
                 for bok in ledige_bøker:
                     print(bok.navn)
 
-                ny_bokreservering = reserver_bok()
+                ny_bokreservering = reserver_bok(current_user.navn)
                 found_book = None
 
                 for bok in ledige_bøker:
@@ -178,16 +192,28 @@ if __name__ == "__main__":
                 if found_book is not None:
                     print("Du har lånt denne boken: " + ny_bokreservering.bok_navn)
                 elif found_book is ingen_ledige:
-                    print("Ingen flere ledige kopier")
+                    print("Ingen flere ledige kopier\n")
                 else:
-                    print("Ingen bok med dette navnet")
+                    print("Ingen bok med dette navnet\n")
             elif option == "2":
                 ledige_bøker = last_inn_ledige_bøker()
                 innlevering = input("Hva heter boken du vil lever inn?\n")
-                for bok in ledige_bøker:
-                    if bok.navn == innlevering:
-                        bok.antall += 1
-                        lagre_ledige_bøker(ledige_bøker)
+                for user in alle_reservasjoner:
+                    if current_user.navn == (user.user):
+                        if user.bok_navn != innlevering:
+                            print(
+                                "Du har ingen bøker ved navnet '"
+                                + innlevering
+                                + "' registrert på ditt navn '\n"
+                                + current_user.navn
+                                + "'"
+                            )
+                        for bok in ledige_bøker:
+                            if bok.navn == innlevering:
+                                bok.antall += 1
+                                bok_innlevering()
+                                print("Du har nå levert inn boken '" + innlevering + "'\n")
+
             elif option == "3":
                 print("Du har nå logget ut.")
                 current_user = None
