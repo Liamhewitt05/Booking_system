@@ -29,6 +29,9 @@ class BokReservering:
     antall_dager_bok: int
 
 
+allowed_chars = set(("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-"))
+
+
 def create_sha(value):
     """kryptering"""
     hash_instance = hashlib.sha256(value.encode())
@@ -73,7 +76,9 @@ def last_inn_brukere():
 def reserver_bok(user):
     """setter reservasjon"""
     ny_bokreserering = BokReservering(
-        user=user, bok_navn=input("bok_navn: "), antall_dager_bok=int(input("antall_dager_bok: "))
+        user=user,
+        bok_navn=input(": "),
+        antall_dager_bok=int(input("Hvor mange dager vil du låne den: ")),
     )
     return ny_bokreserering
 
@@ -138,24 +143,40 @@ def bok_innlevering():
 
 if __name__ == "__main__":
     alle_brukere = last_inn_brukere()
-    alle_reservasjoner = last_inn_reservasjoner()
+
     current_user = None
 
     # temporary cheat to avoid login
-    for user in alle_brukere:
-        if user.navn == "liam":
-            current_user = user
+    # for user in alle_brukere:
+    #     if user.navn == "liam":
+    #         current_user = user
 
     while True:
+        alle_reservasjoner = last_inn_reservasjoner()
         if current_user is None:
             option = input("1: Ny bruker \n2: Logg inn\n:")
             if option == "1":
                 new_user = registrer_bruker()
-                encrypted = create_sha(new_user.passord)
-                new_user.passord = encrypted
-                alle_brukere.append(new_user)
-                lagre_brukere(alle_brukere)
-                current_user = new_user
+
+                ugyldig_brukenavn = False
+                for user in alle_brukere:
+                    if new_user.navn == user.navn:
+                        print("\nBrukernavn eksisterer allerede\n")
+                        ugyldig_brukenavn = True
+
+                validation = set((new_user.navn))
+                if validation.issubset(allowed_chars):
+                    pass
+                else:
+                    print("\nUgyldig navn\n")
+                    ugyldig_brukenavn = True
+
+                if ugyldig_brukenavn == False:
+                    encrypted = create_sha(new_user.passord)
+                    new_user.passord = encrypted
+                    alle_brukere.append(new_user)
+                    lagre_brukere(alle_brukere)
+                    current_user = new_user
 
             elif option == "2":
                 navn = input("Brukernavn: \n")
@@ -170,31 +191,40 @@ if __name__ == "__main__":
             print("\nLogged in as " + current_user.navn + "\n")
             option = input("1: Lån ny bok \n2: Lever inn bok \n3: Logg ut\n:")
             if option == "1":
-                ledige_bøker = last_inn_ledige_bøker()
-                print("Ledige bøker:")
-                for bok in ledige_bøker:
-                    print(bok.navn)
-
-                ny_bokreservering = reserver_bok(current_user.navn)
-                found_book = None
-
-                for bok in ledige_bøker:
-                    if bok.antall < 1:
-                        ingen_ledige = found_book
-                    else:
-                        if bok.navn == ny_bokreservering.bok_navn:
-                            bok.antall -= 1
-                            found_book = bok
-                            alle_reservasjoner.append(ny_bokreservering)
-                            lagre_reservasjoner(alle_reservasjoner)
-                            lagre_ledige_bøker(ledige_bøker)
-                            print(ledige_bøker)
-                if found_book is not None:
-                    print("Du har lånt denne boken: " + ny_bokreservering.bok_navn)
-                elif found_book is ingen_ledige:
-                    print("Ingen flere ledige kopier\n")
+                bruker_har_lånt = False
+                for user in alle_reservasjoner:
+                    if user.user == current_user.navn:
+                        bruker_har_lånt = True
+                if bruker_har_lånt:
+                    print(
+                        "Du kan kun låne en bok om gangen. Du har allerede lånt bok '"
+                        + user.bok_navn
+                        + "'"
+                    )
                 else:
-                    print("Ingen bok med dette navnet\n")
+                    ledige_bøker = last_inn_ledige_bøker()
+                    print("\nLedige bøker:\n")
+                    for bok in ledige_bøker:
+                        print(bok.navn + "\nTilgjengelige Kopier: " + str(bok.antall) + "\n")
+                    ny_bokreservering = reserver_bok(current_user.navn)
+                    found_book = None
+
+                    for bok in ledige_bøker:
+                        if bok.antall < 1:
+                            ingen_ledige = found_book
+                        else:
+                            if bok.navn == ny_bokreservering.bok_navn:
+                                bok.antall -= 1
+                                found_book = bok
+                                alle_reservasjoner.append(ny_bokreservering)
+                                lagre_reservasjoner(alle_reservasjoner)
+                                lagre_ledige_bøker(ledige_bøker)
+                    if found_book is not None:
+                        print("Du har lånt denne boken: " + ny_bokreservering.bok_navn)
+                    elif found_book is ingen_ledige:
+                        print("Ingen flere ledige kopier\n")
+                    else:
+                        print("Ingen bok med dette navnet\n")
             elif option == "2":
                 ledige_bøker = last_inn_ledige_bøker()
                 innlevering = input("Hva heter boken du vil lever inn?\n")
@@ -204,7 +234,7 @@ if __name__ == "__main__":
                             print(
                                 "Du har ingen bøker ved navnet '"
                                 + innlevering
-                                + "' registrert på ditt navn '\n"
+                                + "' registrert på din bruker '\n"
                                 + current_user.navn
                                 + "'"
                             )
