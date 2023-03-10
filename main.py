@@ -131,12 +131,12 @@ def last_inn_ledige_bøker():
     return liste
 
 
-def bok_innlevering():
+def bok_innlevering(ledige_bøker, navn):
     """fjerner boken fra reservasjoner"""
     lagre_ledige_bøker(ledige_bøker)
     data = open("reservasjoner.json", "r").read()
     data = json.loads(data)
-    data.pop(current_user.navn)
+    data.pop(navn)
     with open("reservasjoner.json", "w+") as f:
         f.write(json.dumps(data))
 
@@ -189,7 +189,9 @@ if __name__ == "__main__":
                             print("Innlogging feilet.\n")
         else:
             print("\nLogged in as " + current_user.navn + "\n")
-            option = input("1: Lån ny bok \n2: Lever inn bok \n3: Logg ut\n:")
+            option = input(
+                "1: Lån ny bok \n2: Lever inn bok \n3: Vis reserverte bøker \n4: Logg ut\n:"
+            )
             if option == "1":
                 bruker_har_lånt = False
                 for user in alle_reservasjoner:
@@ -206,9 +208,9 @@ if __name__ == "__main__":
                     print("\nLedige bøker:\n")
                     for bok in ledige_bøker:
                         print(bok.navn + "\nTilgjengelige Kopier: " + str(bok.antall) + "\n")
+
                     ny_bokreservering = reserver_bok(current_user.navn)
                     found_book = None
-
                     for bok in ledige_bøker:
                         if bok.antall < 1:
                             ingen_ledige = found_book
@@ -241,9 +243,19 @@ if __name__ == "__main__":
                         for bok in ledige_bøker:
                             if bok.navn == innlevering:
                                 bok.antall += 1
-                                bok_innlevering()
-                                print("Du har nå levert inn boken '" + innlevering + "'\n")
+                                bok_innlevering(ledige_bøker, current_user.navn)
+                                print("\nDu har nå levert inn boken '" + innlevering + "'\n")
 
             elif option == "3":
+                ledige_bøker = last_inn_ledige_bøker()
+                reserverte_bøker = False
+                for reservasjon in alle_reservasjoner:
+                    if current_user.navn == (reservasjon.user):
+                        print("\nReserverte bøker:\n" + reservasjon.bok_navn)
+                        reserverte_bøker = True
+                if reserverte_bøker == False:
+                    print("\nDu har ingen reservasjoner")
+
+            elif option == "4":
                 print("Du har nå logget ut.")
                 current_user = None
