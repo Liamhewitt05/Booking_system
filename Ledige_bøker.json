@@ -1,13 +1,13 @@
 {
     "alle_boker": {
         "Harry Potter": {
-            "antall": "2"
+            "antall": 3
         },
         "James Bond": {
-            "antall": "2"
+            "antall": 6
         },
-        "Mus": {
-            "antall": "2"
+        "Lord of the rings": {
+            "antall": 3
         }
     }
 }
